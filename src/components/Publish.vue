@@ -11,10 +11,10 @@
 export default {
   name: 'PublishModule',
   data: () => ({
-    filmId: '',
+    filmId: ''
   }),
   computed: {
 
-  },
+  }
 }
 </script>

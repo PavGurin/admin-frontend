@@ -2,11 +2,11 @@ import axios from '@/utils/axios'
 
 export default {
   state: {
-    filmList: []
+    seriesList: {}
   },
   mutations: {
     setList (state, value) {
-      state.filmList = value
+      state.seriesList = value
     }
   },
   methods: {

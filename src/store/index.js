@@ -1,15 +1,39 @@
 import Vuex from 'vuex'
 import Vue from 'vue'
-
-import films from './films'
-// import series from './series'
+import axios from '../utils/axios'
+import * as R from 'ramda'
 
 Vue.use(Vuex)
 
-export default new Vuex.Store({
+async function initList () {
+  const result = await axios
+    .get('/list')
+    .then(R.prop('data'))
+  return result
+}
 
-  modules: {
-    films
-    // series
+export const store = new Vuex.Store({
+  state: {
+    filmsList: []
+  },
+  mutations: {
+    setList (state, list) {
+      state.filmsList = list
+    }
+  },
+  actions: {
+    async getList (context) {
+      const data = await initList()
+      context.commit('setList', data)
+    }
+  },
+  getters: {
+    getEpisodesByStatus: state => id => {
+      const status = state.filmsList[id].status
+      if (typeof status === 'string') {
+        return
+      }
+      return status
+    }
   }
 })

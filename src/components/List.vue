@@ -10,7 +10,9 @@
       :items="list"
       :fields="fields"
     )
+      // status template
       template(v-slot:cell(status)="row") {{status(row.item.status) || 'Сериал' }}
+      // actions template
       template(v-slot:cell(actions)="row")
         b-spinner(v-if="loading")
         template(v-else)
@@ -27,7 +29,7 @@
           template(v-else-if="typeof row.item.status !== 'string'")
             b-button(variant="outline-primary"
              v-on:click="row.toggleDetails"
-            ) {{ seriesList.detailsShowing ? 'Скрыть' : 'Показать'}} Серии
+            ) {{ row.detailsShowing ? 'Скрыть' : 'Показать'}} Серии
 
           template(v-if="row.item.status === 'DONE'")
             b-button(variant="danger") Удалить
@@ -35,7 +37,7 @@
       template(v-slot:row-details="row")
         b-spinner(v-if="loading")
         div(v-else-if="typeof row.item.status !== 'string'")
-          div(v-for="(episode, key) in seriesList[0]") {{key}}
+          div(v-for="(status, episodeName) in $store.getters.getEpisodesByStatus(row.index)") {{episodeName}}
             b-button(
               variant="outline-primary"
               v-on:click="convert(row.item.name)"
@@ -43,7 +45,7 @@
             ) Конвертировать
         div(v-else)
           div(v-for="film in filmsLinks(row.item.name)")
-            a(target='_blank' :href="film.u") {{ film.q }}
+            a(target='_blank' :href="film.url") {{ film.quality }}
             br
           b-button(
             variant="outline-primary"
@@ -60,40 +62,36 @@ import axios from '@/utils/axios'
 
 export default {
   name: 'List',
-  data: () => ({
-    filmList: [],
-    seriesList: [{'1080-1-1.mp4': 'PENDING',
-      '1080-1-2.mp4': 'PENDING',
-      '1080-1-3.mp4': 'PENDING',
-      '1080-1-4.mp4': 'PENDING',
-      '1080-1-5.mp4': 'PENDING'}],
-    fields: [{
-      key: 'name',
-      label: 'Имя',
-      sortable: true
-    },
-    {
-      key: 'status',
-      label: 'Статус'
-    },
-    {
-      key: 'actions',
-      label: 'Действия'
-    }],
-    selected: null,
-    token: null,
-    loading: false,
-    isConvertPending: false,
-    options: [
-      {value: null, text: 'Все'},
-      {value: 'PENDING', text: 'Ожидающие'},
-      {value: 'CONVERTING', text: 'Конвертирующиеся'},
-      {value: 'DONE', text: 'Готовые'}
-    ]
-  }),
-  // created: function () {
-  //   console.log(`films: ` + this.filmList + `\n`, `series: ` + this.seriesList)
-  // },
+  data () {
+    return {
+      fields: [{
+        key: 'name',
+        label: 'Имя',
+        sortable: true
+      },
+      {
+        key: 'status',
+        label: 'Статус'
+      },
+      {
+        key: 'actions',
+        label: 'Действия'
+      }],
+      selected: null,
+      token: null,
+      loading: false,
+      isConvertPending: false,
+      options: [
+        {value: null, text: 'Все'},
+        {value: 'PENDING', text: 'Ожидающие'},
+        {value: 'CONVERTING', text: 'Конвертирующиеся'},
+        {value: 'DONE', text: 'Готовые'}
+      ]
+    }
+  },
+  created () {
+    this.$store.dispatch('getList')
+  },
   mounted () {
     this.getList()
     axios.get('/token').then(R.prop('data')).then(r => {
@@ -103,7 +101,7 @@ export default {
 
     this.intervalId = setInterval(() => {
       this.getList()
-    }, 20 * 1000)
+    }, 20 * 10000)
   },
   beforeDestroy () {
     clearInterval(this.intervalId)
@@ -116,35 +114,31 @@ export default {
   computed: {
     list () {
       if (this.selected !== null) {
-        return this.filmList.filter(item => item.status === this.selected)
+        return this.$store.state.filmsList.filter(item => item.status === this.selected)
       }
-      console.log(this.filmList)
-      return this.filmList
+      console.log(this.$store.state.filmsList)
+      return this.$store.state.filmsList
     }
   },
-
   methods: {
-    episodesLinks (name) {
-      let series = {'1': '2', '3': '4'}
-      console.log(name)
-      return series
-    },
     filmsLinks (name) {
+      console.log('name for filmLinks ' + name)
       const id = name.split('-')[0]
 
       return [
         1080, 720, 480
-      ].map(q =>
+      ].map(quality =>
         ({
-          u: `https://1win.tv/film/${id}/${q}/video.mp4?token=${this.token}`,
-          q
+          url: `https://1win.tv/film/${id}/${quality}/video.mp4?token=${this.token}`,
+          quality
         })
       )
     },
     async getList () {
-      this.filmList = await axios
-        .get('/list')
-        .then(R.prop('data'))
+      return this.$store.state.filmsList
+      // this.filmList = await axios
+      //   .get('/list')
+      //   .then(R.prop('data'))
     },
     status (text) {
       return {
@@ -172,6 +166,17 @@ export default {
       axios
         .delete(`/${encodeURIComponent(name)}`)
         .then(() => this.getList())
+    },
+    createSerialsList () {
+      const seriesList = {}
+
+      for (let film in this.filmList) {
+        if (typeof this.filmList[film].status === 'object') {
+          let key = this.filmList[film].name
+          seriesList[key] = this.filmList[film].status
+        }
+      }
+      return seriesList
     }
   }
 }

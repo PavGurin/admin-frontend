@@ -1,4 +1,4 @@
-import axios from '@/utils/axios'
+// import axios from '@/utils/axios'
 
 export default {
   state: {
@@ -11,12 +11,13 @@ export default {
   },
   methods: {
     getList ({commit}) {
-      return axios
-        .get('/list')
-        .then(it => it.data)
-        .then(list => {
-          commit('setList', list)
-        })
+      return null
+      // return axios
+      //   .get('/list')
+      //   .then(it => it.data)
+      //   .then(list => {
+      //     commit('setList', list)
+      //   })
     }
   }
 }

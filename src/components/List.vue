@@ -1,10 +1,16 @@
 <template lang="pug">
   b-container
-
-    b-select(
-      :options="options"
-      v-model="selected"
-    )
+    b-form-radio-group(
+        v-model="mode"
+        :options="modeList"
+        name="plain-inline"
+        plain
+      )
+      template(v-if='mode === "films"')
+        b-select(
+        v-model="selected"
+        :options="options"
+        )
 
     b-table(
       :items="list"
@@ -37,7 +43,7 @@
       template(v-slot:row-details="row")
         b-spinner(v-if="loading")
         div(v-else-if="typeof row.item.status !== 'string'")
-          div(v-for="(status, episodeName) in $store.getters.getEpisodesByStatus(row.index)") {{episodeName}}
+          div(v-for="(status, episodeName) in $store.getters.getSeasonsList(row.index)") {{status}}
             b-button(
               variant="outline-primary"
               v-on:click="convert(row.item.name)"
@@ -67,26 +73,31 @@ export default {
       fields: [{
         key: 'name',
         label: 'Имя',
-        sortable: true
+        sortable: true,
       },
       {
         key: 'status',
-        label: 'Статус'
+        label: 'Статус',
       },
       {
         key: 'actions',
-        label: 'Действия'
+        label: 'Действия',
       }],
       selected: null,
+      mode: 'films',
       token: null,
       loading: false,
       isConvertPending: false,
+      modeList: [
+        {value: 'films', text: 'Фильмы'},
+        {value: 'serials', text: 'Сериалы'},
+      ],
       options: [
         {value: null, text: 'Все'},
         {value: 'PENDING', text: 'Ожидающие'},
         {value: 'CONVERTING', text: 'Конвертирующиеся'},
-        {value: 'DONE', text: 'Готовые'}
-      ]
+        {value: 'DONE', text: 'Готовые'},
+      ],
     }
   },
   created () {
@@ -109,16 +120,22 @@ export default {
   watch: {
     filmList (l) {
       console.log('l', l)
-    }
+    },
   },
   computed: {
     list () {
-      if (this.selected !== null) {
-        return this.$store.state.filmsList.filter(item => item.status === this.selected)
+      if (this.mode === 'films') {
+        if (this.selected !== null) {
+          return this.$store.getters.getFilmsList.filter(item => item.status === this.selected)
+        }
+        // console.log(this.$store.state.allVideosList)
+        return this.$store.getters.getFilmsList
       }
-      console.log(this.$store.state.filmsList)
-      return this.$store.state.filmsList
-    }
+      if (this.mode === 'serials') {
+        // console.log(this.$store.state.serialsList)
+        return this.$store.getters.getSerialsList
+      }
+    },
   },
   methods: {
     filmsLinks (name) {
@@ -126,25 +143,28 @@ export default {
       const id = name.split('-')[0]
 
       return [
-        1080, 720, 480
+        1080, 720, 480,
       ].map(quality =>
         ({
           url: `https://1win.tv/film/${id}/${quality}/video.mp4?token=${this.token}`,
-          quality
+          quality,
         })
       )
     },
     async getList () {
-      return this.$store.state.filmsList
-      // this.filmList = await axios
-      //   .get('/list')
-      //   .then(R.prop('data'))
+      return this.$store.state.allVideosList
+    },
+    async getFilmsList () {
+      return this.$store.state.films.filmsList
+    },
+    async getSerialsList () {
+      return this.$store.state.serials.serialsList
     },
     status (text) {
       return {
         PENDING: 'Ожидает',
         CONVERTING: 'В процессе конвертации',
-        DONE: 'Готово'
+        DONE: 'Готово',
       }[text]
     },
     async convert (name) {
@@ -167,17 +187,6 @@ export default {
         .delete(`/${encodeURIComponent(name)}`)
         .then(() => this.getList())
     },
-    createSerialsList () {
-      const seriesList = {}
-
-      for (let film in this.filmList) {
-        if (typeof this.filmList[film].status === 'object') {
-          let key = this.filmList[film].name
-          seriesList[key] = this.filmList[film].status
-        }
-      }
-      return seriesList
-    }
-  }
+  },
 }
 </script>

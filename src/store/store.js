@@ -2,6 +2,8 @@ import Vuex from 'vuex'
 import Vue from 'vue'
 import axios from '../utils/axios'
 import * as R from 'ramda'
+import serials from './serials'
+import films from './films'
 
 Vue.use(Vuex)
 
@@ -9,31 +11,28 @@ async function initList () {
   const result = await axios
     .get('/list')
     .then(R.prop('data'))
+  console.log(`initList result = ` + Object.entries(result))
   return result
 }
 
 export const store = new Vuex.Store({
+  modules: {
+    serials,
+    films,
+  },
   state: {
-    filmsList: []
+    allVideosList: [],
   },
   mutations: {
-    setList (state, list) {
-      state.filmsList = list
-    }
+    setAllVideosList (state, list) {
+      state.allVideosList = list
+    },
   },
   actions: {
     async getList (context) {
       const data = await initList()
-      context.commit('setList', data)
-    }
+      console.log(data)
+      context.commit('setAllVideosList', data)
+    },
   },
-  getters: {
-    getEpisodesByStatus: state => id => {
-      const status = state.filmsList[id].status
-      if (typeof status === 'string') {
-        return
-      }
-      return status
-    }
-  }
 })

@@ -1,23 +1,9 @@
-// import axios from '@/utils/axios'
-
 export default {
-  state: {
-    filmList: []
+  getters: {
+    getFilmsList (state, getters, rootState) {
+      return rootState.allVideosList.filter(function (video) {
+        return typeof video.status === 'string'
+      })
+    },
   },
-  mutations: {
-    setList (state, value) {
-      state.filmList = value
-    }
-  },
-  methods: {
-    getList ({commit}) {
-      return null
-      // return axios
-      //   .get('/list')
-      //   .then(it => it.data)
-      //   .then(list => {
-      //     commit('setList', list)
-      //   })
-    }
-  }
 }

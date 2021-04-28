@@ -35,7 +35,7 @@
           template(v-else-if="typeof row.item.status !== 'string'")
             b-button(variant="outline-primary"
              v-on:click="row.toggleDetails"
-            ) {{ row.detailsShowing ? 'Скрыть' : 'Показать'}} Серии
+            ) {{ row.detailsShowing ? 'Скрыть' : 'Показать'}} Сезоны
 
           template(v-if="row.item.status === 'DONE'")
             b-button(variant="danger") Удалить
@@ -43,12 +43,16 @@
       template(v-slot:row-details="row")
         b-spinner(v-if="loading")
         div(v-else-if="typeof row.item.status !== 'string'")
-          div(v-for="(status, episodeName) in $store.getters.getSeasonsList(row.index)") {{status}}
-            b-button(
-              variant="outline-primary"
-              v-on:click="convert(row.item.name)"
-              :disabled="isConvertPending"
-            ) Конвертировать
+          div(v-for="(status, i) in $store.getters.getSeasonsList(row.index)") {{status}} Сезон
+            b-button(variant="outline-primary"
+            class='episodes'
+            v-on:click="toggleState(row.item.name + row.index + i)"
+             ) {{ stateList[row.item.name + row.index + i] ? 'Cкрыть' : 'Показать'}} Серии
+            code {{ selected }}
+            TableSerials(
+              v-if="stateList[row.item.name + row.index + i]"
+              :list="$store.getters.getEpisodesByStatus(row.index, i)"
+            )
         div(v-else)
           div(v-for="film in filmsLinks(row.item.name)")
             a(target='_blank' :href="film.url") {{ film.quality }}
@@ -65,9 +69,11 @@
 <script>
 import * as R from 'ramda'
 import axios from '@/utils/axios'
+import TableSerials from './TableSerials'
 
 export default {
   name: 'List',
+  components: {TableSerials},
   data () {
     return {
       fields: [{
@@ -88,6 +94,7 @@ export default {
       token: null,
       loading: false,
       isConvertPending: false,
+      stateList: {},
       modeList: [
         {value: 'films', text: 'Фильмы'},
         {value: 'serials', text: 'Сериалы'},
@@ -117,31 +124,25 @@ export default {
   beforeDestroy () {
     clearInterval(this.intervalId)
   },
-  watch: {
-    filmList (l) {
-      console.log('l', l)
-    },
-  },
   computed: {
     list () {
       if (this.mode === 'films') {
         if (this.selected !== null) {
           return this.$store.getters.getFilmsList.filter(item => item.status === this.selected)
         }
-        // console.log(this.$store.state.allVideosList)
         return this.$store.getters.getFilmsList
       }
       if (this.mode === 'serials') {
-        // console.log(this.$store.state.serialsList)
         return this.$store.getters.getSerialsList
       }
     },
   },
   methods: {
+    toggleState (key) {
+      this.$set(this.stateList, key, !this.stateList[key])
+    },
     filmsLinks (name) {
-      console.log('name for filmLinks ' + name)
       const id = name.split('-')[0]
-
       return [
         1080, 720, 480,
       ].map(quality =>

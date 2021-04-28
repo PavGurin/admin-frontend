@@ -1,12 +1,20 @@
 
 export default {
   getters: {
-    getEpisodesByStatus: (state, getters) => id => {
-      const status = getters.getSerialsList[id].status
-      if (typeof status === 'string') {
+    getEpisodesByStatus: (state, getters) => (serialId, seasonId) => {
+      let series = getters.getSerialsList[serialId].status
+      if (typeof series === 'string') {
         return
       }
-      return status
+      let episodes = []
+      for (let fileName in series) {
+        let season = parseInt(fileName.split('-')[1])
+        let episode = fileName.split('-')[2].split(`.`)[0]
+        if (season === seasonId + 1 && !episodes.includes(episode)) {
+          episodes.push(episode)
+        }
+      }
+      return episodes
     },
     getSerialsList (state, getters, rootState) {
       return rootState.allVideosList.filter(function (video) {
@@ -15,17 +23,13 @@ export default {
     },
     getSeasonsList: (state, getters) => id => {
       let serialsList = []
-      console.log(getters.getSerialsList[id], id)
       let series = getters.getSerialsList[id].status
-      console.log(series)
       for (let fileName in series) {
-        console.log(fileName)
         let season = fileName.split('-')[1]
         if (!serialsList.includes(season)) {
           serialsList.push(season)
         }
       }
-      console.log(serialsList)
       return serialsList
     },
   }}

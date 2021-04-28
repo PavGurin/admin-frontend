@@ -11,7 +11,6 @@ async function initList () {
   const result = await axios
     .get('/list')
     .then(R.prop('data'))
-  console.log(`initList result = ` + Object.entries(result))
   return result
 }
 
@@ -31,7 +30,6 @@ export const store = new Vuex.Store({
   actions: {
     async getList (context) {
       const data = await initList()
-      console.log(data)
       context.commit('setAllVideosList', data)
     },
   },

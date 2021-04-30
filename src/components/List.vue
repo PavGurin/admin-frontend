@@ -48,10 +48,12 @@
             class='episodes'
             v-on:click="toggleState(row.item.name + row.index + i)"
              ) {{ stateList[row.item.name + row.index + i] ? 'Cкрыть' : 'Показать'}} Серии
-            code {{ selected }}
             TableSerials(
               v-if="stateList[row.item.name + row.index + i]"
               :list="$store.getters.getEpisodesByStatus(row.index, i)"
+              :episodeInfo="row.item"
+              :serialId="row.index"
+              :seasonId="i"
             )
         div(v-else)
           div(v-for="film in filmsLinks(row.item.name)")

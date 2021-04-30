@@ -1,19 +1,35 @@
 <template lang="pug">
   div
-    b-select(
-      v-model="selected"
-      :options="options"
-    )
+    //b-select(
+    //  v-model="selected"
+    //  :options="options"
+    //)
+    b-button(
+        variant="outline-primary"
+      ) Конвертировать Все
     b-table(
       :items="list"
       :fields="fields"
     )
-      template(v-slot:cell(name)="row") {{row.item}}
-      template(v-slot:cell(actions)="row") {{11}}
-      template(v-slot:cell(status)="row")
-        b-badge 1080
-        b-badge 720
-        b-badge 480
+
+      template(v-slot:cell(episode)="row") {{row.item}}
+      template(v-slot:cell(status)="row") {{ getEpisodeStatus(row.item)}}
+        //b-badge 1080
+        //b-badge 720
+        //b-badge 480
+      template(v-slot:cell(actions)="row")
+        template(v-if="getEpisodeStatus(row.item) === 'PENDING'")
+          b-button(
+            variant="outline-primary"
+            v-on:click="convert(row.item.name)"
+          ) Конвертировать
+        template(v-else-if="getEpisodeStatus(row.item) === 'CONVERTING'")
+          b-button(
+            v-on:click="row.toggleDetails"
+          ) Ожидаем завершения
+        template(v-if="getEpisodeStatus(row.item) === 'DONE'")
+          b-button(variant="danger") Удалить
+
 </template>
 
 <script>
@@ -22,7 +38,7 @@ export default {
   data () {
     return {
       fields: [{
-        key: 'name',
+        key: 'episode',
         label: 'Серия',
         sortable: true,
       },
@@ -47,6 +63,21 @@ export default {
     list: {
       type: Array,
       required: true,
+    },
+    episodeInfo: {
+      type: Object,
+      required: true,
+    },
+    serialId: {
+      type: Number,
+    },
+    seasonId: {
+      type: Number,
+    },
+  },
+  methods: {
+    getEpisodeStatus (item) {
+      return this.$store.getters.getStatusOfEpisode(this.serialId, this.seasonId + 1, item)
     },
   },
 }
